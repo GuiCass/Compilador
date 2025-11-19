@@ -1,6 +1,8 @@
 --- Fase 4: Código Intermediário (TAC) ---
-LOAD R1, i
-ADDI R1, 1
-STORE i, R1
+LOADI R1, 10
+STORE a, R1
+LOAD R1, a
+ADDI R1, 5
+STORE b, R1
 Geração de código concluída com sucesso!
 -------------------------------------------------

@@ -1,6 +1,7 @@
 --- Fase 3: Análise Semântica (Tabela Símbolos) ---
 --- Tabela de Símbolos ---
-ID: i          | Categoria: variável inteiro
+ID: a          | Categoria: variável inteiro
+ID: b          | Categoria: variável inteiro
 ----------------------------
 Análise semântica concluída com sucesso!
 -------------------------------------------------

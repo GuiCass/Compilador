@@ -1,4 +1,5 @@
 $
-inteiro a
-a = 5;
+inteiro a, b;
+a = 10;
+b = a + 5;
 $.
