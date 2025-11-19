@@ -1,10 +1,10 @@
 --- ERRO DE COMPILAÇÃO ---
-Erro Sintático: Esperado IDENTIFICADOR ou NOT após '('. Linha 5
+Erro Sintático: Esperado ENTAO mas encontrado IDENTIFICADOR na linha 3
 
 --- Stack Trace ---
-java.lang.RuntimeException: Erro Sintático: Esperado IDENTIFICADOR ou NOT após '('. Linha 5
-	at AnalisadorSintatico.condicao(AnalisadorSintatico.java:227)
-	at AnalisadorSintatico.condicional(AnalisadorSintatico.java:169)
+java.lang.RuntimeException: Erro Sintático: Esperado ENTAO mas encontrado IDENTIFICADOR na linha 3
+	at AnalisadorSintatico.consumir(AnalisadorSintatico.java:24)
+	at AnalisadorSintatico.condicional(AnalisadorSintatico.java:172)
 	at AnalisadorSintatico.comando(AnalisadorSintatico.java:95)
 	at AnalisadorSintatico.programa(AnalisadorSintatico.java:44)
 	at Main.main(Main.java:34)

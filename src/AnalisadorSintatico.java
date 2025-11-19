@@ -194,8 +194,12 @@ public class AnalisadorSintatico {
             consumir(TipoToken.ABRE_PARENTESES);
             noCondicao.adicionarFilho(new NoArvore("(", tokenAtual.linha));
 
+            if (tokenAtual.tipo == TipoToken.ABRE_PARENTESES) {
+                // Se encontrar outro '(', chama condicao() recursivamente
+                noCondicao.adicionarFilho(condicao());
+            }
             // CORREÇÃO: Verifica se é NOT logo após o parêntese
-            if (tokenAtual.tipo == TipoToken.OP_BOOLEANO_NOT) {
+            else if (tokenAtual.tipo == TipoToken.OP_BOOLEANO_NOT) {
                 // --- CASO DO NOT: ( NOT ( ... ) ) ---
                 noCondicao.adicionarFilho(new NoArvore(tokenAtual.lexema, tokenAtual.linha)); // NOT
                 consumir(TipoToken.OP_BOOLEANO_NOT);

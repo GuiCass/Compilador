@@ -1,9 +1,4 @@
 $
-inteiro a, b;
-a = 5;
-b = 10;
-se ((a > 0) E (b < 20)) entao
-    a = a + 1;
-se ((a == 6) OR (b == 10)) entao
-    b = b + 1;
+inteiro a;
+se (a > 10) a = 0;
 $.
