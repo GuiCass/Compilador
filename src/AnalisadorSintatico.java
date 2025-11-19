@@ -109,24 +109,54 @@ public class AnalisadorSintatico {
 
         noAtribuicao.adicionarFilho(new NoArvore(tokenAtual.lexema, tokenAtual.linha)); // =
         consumir(TipoToken.OP_ATRIBUICAO);
-        
+
+        // Primeiro termo
         noAtribuicao.adicionarFilho(expressao());
-        
-        while (tokenAtual.tipo == TipoToken.OP_SOMA) {
-            noAtribuicao.adicionarFilho(new NoArvore(tokenAtual.lexema, tokenAtual.linha)); // +
+
+        // Loop para operadores (+, *, /, RESTO)
+        while (tokenAtual.tipo == TipoToken.OP_SOMA ||
+                tokenAtual.tipo == TipoToken.OP_MULT ||
+                tokenAtual.tipo == TipoToken.OP_DIV  ||
+                tokenAtual.tipo == TipoToken.OP_RESTO) {
+
+            noAtribuicao.adicionarFilho(new NoArvore(tokenAtual.lexema, tokenAtual.linha)); // op
             consumir(tokenAtual.tipo);
+
             noAtribuicao.adicionarFilho(expressao());
         }
-        
-        consumir(TipoToken.PONTO_E_VIRGULA); 
-        
+
+        consumir(TipoToken.PONTO_E_VIRGULA);
         return noAtribuicao;
     }
-    
+
     private NoArvore expressao() {
         NoArvore noExpressao = new NoArvore("Expressao", tokenAtual.linha);
-        noExpressao.adicionarFilho(new NoArvore(tokenAtual.lexema, tokenAtual.linha)); // id ou numero
-        consumir(tokenAtual.tipo);
+
+        if (tokenAtual.tipo == TipoToken.ABRE_PARENTESES) {
+            // Tratamento de parênteses: '(' expressão operador expressão ')'
+            consumir(TipoToken.ABRE_PARENTESES);
+            noExpressao.adicionarFilho(expressao()); // Recursão para o lado esquerdo
+
+            // Operador obrigatório dentro dos parênteses segundo a regra estrita
+            if (tokenAtual.tipo == TipoToken.OP_SOMA || tokenAtual.tipo == TipoToken.OP_MULT ||
+                    tokenAtual.tipo == TipoToken.OP_DIV || tokenAtual.tipo == TipoToken.OP_RESTO) {
+                noExpressao.adicionarFilho(new NoArvore(tokenAtual.lexema, tokenAtual.linha));
+                consumir(tokenAtual.tipo);
+            }
+
+            noExpressao.adicionarFilho(expressao()); // Recursão para o lado direito
+            consumir(TipoToken.FECHA_PARENTESES);
+
+        } else if (tokenAtual.tipo == TipoToken.NUMERO) {
+            noExpressao.adicionarFilho(new NoArvore(tokenAtual.lexema, tokenAtual.linha));
+            consumir(TipoToken.NUMERO);
+        } else if (tokenAtual.tipo == TipoToken.IDENTIFICADOR) {
+            noExpressao.adicionarFilho(new NoArvore(tokenAtual.lexema, tokenAtual.linha));
+            consumir(TipoToken.IDENTIFICADOR);
+        } else {
+            throw new RuntimeException("Erro Sintático: Esperado número, ID ou '(' na linha " + tokenAtual.linha);
+        }
+
         return noExpressao;
     }
 
@@ -155,32 +185,54 @@ public class AnalisadorSintatico {
 
         return noCondicional;
     }
-    
+
+    // regra: condicao = condicaoSimples ( (E | OR) condicaoSimples )*
     private NoArvore condicao() {
         NoArvore noCondicao = new NoArvore("Condicao", tokenAtual.linha);
 
-        noCondicao.adicionarFilho(new NoArvore(tokenAtual.lexema, tokenAtual.linha)); // (
+        // Processa a primeira condição simples: ( id op id )
+        noCondicao.adicionarFilho(condicaoSimples());
+
+        // Verifica se há conectivos lógicos E / OR
+        while (tokenAtual.tipo == TipoToken.OP_BOOLEANO_E || tokenAtual.tipo == TipoToken.OP_BOOLEANO_OR) {
+            noCondicao.adicionarFilho(new NoArvore(tokenAtual.lexema, tokenAtual.linha)); // E / OR
+            consumir(tokenAtual.tipo);
+
+            noCondicao.adicionarFilho(condicaoSimples());
+        }
+
+        return noCondicao;
+    }
+
+    // Método auxiliar para a parte básica: '(' id op id ')'
+    private NoArvore condicaoSimples() {
+        NoArvore noSimples = new NoArvore("CondicaoSimples", tokenAtual.linha);
+
         consumir(TipoToken.ABRE_PARENTESES);
 
-        noCondicao.adicionarFilho(new NoArvore(tokenAtual.lexema, tokenAtual.linha)); // id
-        consumir(TipoToken.IDENTIFICADOR);
-
-        noCondicao.adicionarFilho(new NoArvore(tokenAtual.lexema, tokenAtual.linha)); // op_logico
-        consumir(TipoToken.OP_LOGICO);
-        
-        noCondicao.adicionarFilho(new NoArvore(tokenAtual.lexema, tokenAtual.linha)); // id ou numero
+        // Lado esquerdo
         if (tokenAtual.tipo == TipoToken.IDENTIFICADOR) {
+            noSimples.adicionarFilho(new NoArvore(tokenAtual.lexema, tokenAtual.linha));
             consumir(TipoToken.IDENTIFICADOR);
-        } else if (tokenAtual.tipo == TipoToken.NUMERO) {
-            consumir(TipoToken.NUMERO);
         } else {
-             throw new RuntimeException("Erro Sintático: Esperado identificador ou número na condição");
+            // Permitir número à esquerda também? A regra diz 'identificador' primeiro, mas lógica comum permite num.
+            // Seguindo a regra estrita:
+            throw new RuntimeException("Erro Sintático: Esperado Identificador no início da condição.");
         }
-        
-        noCondicao.adicionarFilho(new NoArvore(tokenAtual.lexema, tokenAtual.linha)); // )
+
+        noSimples.adicionarFilho(new NoArvore(tokenAtual.lexema, tokenAtual.linha)); // op relacional (> < ==)
+        consumir(TipoToken.OP_LOGICO);
+
+        // Lado direito (id ou numero)
+        if (tokenAtual.tipo == TipoToken.IDENTIFICADOR || tokenAtual.tipo == TipoToken.NUMERO) {
+            noSimples.adicionarFilho(new NoArvore(tokenAtual.lexema, tokenAtual.linha));
+            consumir(tokenAtual.tipo);
+        } else {
+            throw new RuntimeException("Erro Sintático: Esperado valor na comparação.");
+        }
+
         consumir(TipoToken.FECHA_PARENTESES);
-        
-        return noCondicao;
+        return noSimples;
     }
 
     private NoArvore iterativo(int profundidade) {

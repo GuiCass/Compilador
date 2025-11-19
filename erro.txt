@@ -4,6 +4,6 @@ Erro Sintático: Esperado PONTO_E_VIRGULA mas encontrado IDENTIFICADOR na linha 
 --- Stack Trace ---
 java.lang.RuntimeException: Erro Sintático: Esperado PONTO_E_VIRGULA mas encontrado IDENTIFICADOR na linha 3
 	at AnalisadorSintatico.consumir(AnalisadorSintatico.java:24)
-	at AnalisadorSintatico.declaracaoTipo(AnalisadorSintatico.java:81)
-	at AnalisadorSintatico.programa(AnalisadorSintatico.java:40)
+	at AnalisadorSintatico.declaracaoTipo(AnalisadorSintatico.java:82)
+	at AnalisadorSintatico.programa(AnalisadorSintatico.java:39)
 	at Main.main(Main.java:34)

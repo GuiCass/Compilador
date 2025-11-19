@@ -9,6 +9,7 @@ public enum TipoToken {
 
     // Operadores
     OP_SOMA, OP_MULT, OP_DIV, OP_RESTO, // +, *, /, RESTO
+    OP_BOOLEANO_E, OP_BOOLEANO_OR, OP_BOOLEANO_NOT,
     OP_ATRIBUICAO, // =
     OP_LOGICO, // >, <, ==, <=, >=, !=
 
