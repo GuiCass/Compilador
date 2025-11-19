@@ -70,11 +70,10 @@ public class GeradorCodigoIntermediario {
         NoArvore noComandoEntao = noCondicional.filhos.get(3);
 
         String labelFim = alocarLabel();
-        String labelSenao = alocarLabel(); // Usado se houver senao
 
-        // Avalia a condição e devolve o registrador com o resultado booleano (ou faz o salto)
-        // Nota: Aqui assumimos condição simples para manter compatibilidade com TAC básico
-        processarCondicaoSimples(noCondicao, labelFim);
+        // Gera código para a condição.
+        // Contrato: Se FALSO, pula para labelFim. Se VERDADEIRO, cai no bloco (fallthrough).
+        gerarCodigoCondicao(noCondicao, null, labelFim);
 
         // Bloco Entao
         gerar(noComandoEntao);
@@ -82,9 +81,9 @@ public class GeradorCodigoIntermediario {
         // Verifica se tem Senao
         if (noCondicional.filhos.size() > 5 && noCondicional.filhos.get(4).valor.equals("senao")) {
             String labelFinalReal = alocarLabel();
-            emitir("JMP " + labelFinalReal); // Pula o senao ao terminar o entao
+            emitir("JMP " + labelFinalReal); // Terminou o 'entao', pula o 'senao'
 
-            emitir("LABEL " + labelFim); // O salto falso cai aqui (inicio do senao)
+            emitir("LABEL " + labelFim); // Aqui começa o bloco 'senao'
             NoArvore noComandoSenao = noCondicional.filhos.get(5);
             gerar(noComandoSenao);
 
@@ -104,36 +103,116 @@ public class GeradorCodigoIntermediario {
 
         emitir("LABEL " + labelInicio);
 
-        // Avalia condição e pula para labelFim se for falso
-        processarCondicaoSimples(noCondicao, labelFim);
+        // Gera código para a condição.
+        // Contrato: Se FALSO, sai do loop (pula para labelFim).
+        gerarCodigoCondicao(noCondicao, null, labelFim);
 
         gerar(noComando);
         emitir("JMP " + labelInicio);
         emitir("LABEL " + labelFim);
     }
 
-    // Método auxiliar para lidar com a nova estrutura da árvore de condição
-    private void processarCondicaoSimples(NoArvore noCondicao, String labelDestinoSeFalso) {
-        // A AST agora é: Condicao -> CondicaoSimples -> [(, id, op, id/num, )]
-        // Vamos pegar o primeiro filho que deve ser CondicaoSimples
-        if (noCondicao.filhos.get(0).valor.equals("CondicaoSimples")) {
-            NoArvore noSimples = noCondicao.filhos.get(0);
+    /**
+     * Método recursivo para gerar código de condições complexas (AND, OR, NOT).
+     * @param no Nó da árvore (Condicao ou CondicaoSimples)
+     * @param labelTrue Label para pular se Verdadeiro (se null, faz fallthrough)
+     * @param labelFalse Label para pular se Falso (se null, faz fallthrough)
+     */
+    private void gerarCodigoCondicao(NoArvore no, String labelTrue, String labelFalse) {
 
-            // Índices no CondicaoSimples: 0='(', 1=ID, 2=OP, 3=VALOR, 4=')'
-            NoArvore termo1 = noSimples.filhos.get(1);
-            NoArvore op = noSimples.filhos.get(2);
-            NoArvore termo2 = noSimples.filhos.get(3);
+        // Verifica se há operadores lógicos (E / OR) nos filhos diretos
+        // A estrutura gerada é geralmente [Esquerda, OP, Direita] devido à recursão no Sintático
+
+        int indexOp = -1;
+        for (int i = 0; i < no.filhos.size(); i++) {
+            String val = no.filhos.get(i).valor;
+            if (val.equals("E") || val.equals("OR")) {
+                indexOp = i;
+                break;
+            }
+        }
+
+        if (indexOp != -1) {
+            // --- CASO COMPOSTO (AND / OR) ---
+            String op = no.filhos.get(indexOp).valor;
+            NoArvore direita = no.filhos.get(indexOp + 1);
+
+            // O nó da esquerda é tudo antes do operador.
+            // Se houver múltiplos filhos antes (ex: parenteses), precisamos tratar com cuidado.
+            // Na sua árvore atual, a recursão "aninha" à direita, então a esquerda geralmente é
+            // uma CondicaoSimples ou um bloco NOT que ocupa as primeiras posições.
+            // Simplificação: Pegamos o primeiro filho lógico (índice 0) como esquerda.
+            NoArvore esquerda = no.filhos.get(0);
+
+            if (op.equals("E")) {
+                // Esquerda E Direita
+                // Se Esquerda for Falso, o resultado é Falso -> Pula para labelFalse.
+                // Se Esquerda for Verdadeiro, avalia a Direita.
+                gerarCodigoCondicao(esquerda, null, labelFalse);
+                gerarCodigoCondicao(direita, labelTrue, labelFalse);
+
+            } else if (op.equals("OR")) {
+                // Esquerda OR Direita
+                // Se Esquerda for Verdadeiro, o resultado é Verdadeiro -> Pula para labelTrue.
+                // Se Esquerda for Falso, avalia a Direita.
+                gerarCodigoCondicao(esquerda, labelTrue, null);
+                gerarCodigoCondicao(direita, labelTrue, labelFalse);
+            }
+            return;
+        }
+
+        // --- CASO NOT ---
+        // Verifica se contém o token "NOT"
+        for (NoArvore filho : no.filhos) {
+            if (filho.valor.equals("NOT")) {
+                // Estrutura: [ (, NOT, CondicaoInterna, ) ]
+                // O operando é a CondicaoInterna (filho índice 2 normalmente)
+                NoArvore operando = no.filhos.get(2);
+
+                // Inverte os labels: Se NOT(A) é True, então A é False.
+                // Logo, passamos labelFalse como destino de sucesso de A, e vice-versa.
+                gerarCodigoCondicao(operando, labelFalse, labelTrue);
+                return;
+            }
+        }
+
+        // --- CASO CONDICAO SIMPLES ---
+        NoArvore noSimples = null;
+
+        // Se o próprio nó já for a CondicaoSimples
+        if (no.valor.equals("CondicaoSimples")) {
+            noSimples = no;
+        } else {
+            // Procura nos filhos (pode estar na posição 0 ou 1 dependendo dos parênteses)
+            for (NoArvore filho : no.filhos) {
+                if (filho.valor.equals("CondicaoSimples")) {
+                    noSimples = filho;
+                    break;
+                }
+            }
+        }
+
+        if (noSimples != null) {
+            // ... (código de geração: carregarTermo, emitir, JMP) ...
+            // (Mantenha o restante do bloco igual ao anterior)
+            NoArvore termo1 = noSimples.filhos.get(0);
+            NoArvore op = noSimples.filhos.get(1);
+            NoArvore termo2 = noSimples.filhos.get(2);
 
             String reg1 = carregarTermo(termo1);
             String reg2 = carregarTermo(termo2);
             String opMnem = traduzirOperadorLogico(op.valor);
 
             emitir(opMnem + " " + reg1 + ", " + reg2);
-            emitir("JMPFALSE " + reg1 + ", " + labelDestinoSeFalso);
-        } else {
-            // Caso para NOT ou complexas (Simplificação: trata como erro ou ignora)
-            // Para suportar NOT/E/OR, seria necessário uma lógica recursiva de labels.
-            throw new RuntimeException("Gerador de Código: Condições complexas (NOT/E/OR) ainda não implementadas no backend.");
+
+            if (labelTrue != null && labelFalse == null) {
+                emitir("JMPTRUE " + reg1 + ", " + labelTrue);
+            } else if (labelTrue == null && labelFalse != null) {
+                emitir("JMPFALSE " + reg1 + ", " + labelFalse);
+            } else if (labelTrue != null && labelFalse != null) {
+                emitir("JMPTRUE " + reg1 + ", " + labelTrue);
+                emitir("JMP " + labelFalse);
+            }
         }
     }
 
@@ -186,10 +265,10 @@ public class GeradorCodigoIntermediario {
     private String traduzirOperadorAritmetico(String op) {
         switch (op) {
             case "+": return "ADD";
-            case "-": return "SUB";
+            case "-": return "SUB"; // (Embora não usado na MLP padrão, mantido por segurança)
             case "*": return "MUL";
             case "/": return "DIV";
-            case "RESTO": return "MOD"; // Implementado RESTO
+            case "RESTO": return "MOD";
             default: throw new RuntimeException("Op aritmético inválido: " + op);
         }
     }
@@ -198,7 +277,6 @@ public class GeradorCodigoIntermediario {
         switch (op) {
             case "+": return "ADDI";
             case "-": return "SUBI";
-            // Multiplicação, Divisão e Resto não costumam ter imediatos em TAC simples
             default: return traduzirOperadorAritmetico(op);
         }
     }

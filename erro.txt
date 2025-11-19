@@ -1,9 +1,10 @@
 --- ERRO DE COMPILAÇÃO ---
-Erro Sintático: Esperado PONTO_E_VIRGULA mas encontrado IDENTIFICADOR na linha 3
+Erro Sintático: Esperado IDENTIFICADOR ou NOT após '('. Linha 5
 
 --- Stack Trace ---
-java.lang.RuntimeException: Erro Sintático: Esperado PONTO_E_VIRGULA mas encontrado IDENTIFICADOR na linha 3
-	at AnalisadorSintatico.consumir(AnalisadorSintatico.java:24)
-	at AnalisadorSintatico.declaracaoTipo(AnalisadorSintatico.java:82)
-	at AnalisadorSintatico.programa(AnalisadorSintatico.java:39)
+java.lang.RuntimeException: Erro Sintático: Esperado IDENTIFICADOR ou NOT após '('. Linha 5
+	at AnalisadorSintatico.condicao(AnalisadorSintatico.java:227)
+	at AnalisadorSintatico.condicional(AnalisadorSintatico.java:169)
+	at AnalisadorSintatico.comando(AnalisadorSintatico.java:95)
+	at AnalisadorSintatico.programa(AnalisadorSintatico.java:44)
 	at Main.main(Main.java:34)

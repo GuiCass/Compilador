@@ -186,54 +186,58 @@ public class AnalisadorSintatico {
         return noCondicional;
     }
 
-    // regra: condicao = condicaoSimples ( (E | OR) condicaoSimples )*
+    // regra: condicao = '(' condicaoSimples ')' | '(' NOT condicao ')'
     private NoArvore condicao() {
         NoArvore noCondicao = new NoArvore("Condicao", tokenAtual.linha);
 
-        // Verifica lookahead para decidir entre CondicaoSimples ou NOT
-        // Ambos começam com '(' seguido de IDENTIFICADOR
         if (tokenAtual.tipo == TipoToken.ABRE_PARENTESES) {
-            // Precisamos "espiar" a estrutura sem consumir agora, ou iniciar o consumo
-            // Como seu parser é preditivo simples, vamos iniciar e decidir no caminho:
-
             consumir(TipoToken.ABRE_PARENTESES);
-            String lexemaId = tokenAtual.lexema;
-            int linhaId = tokenAtual.linha;
-            consumir(TipoToken.IDENTIFICADOR); // Consome o ID inicial
+            noCondicao.adicionarFilho(new NoArvore("(", tokenAtual.linha));
 
+            // CORREÇÃO: Verifica se é NOT logo após o parêntese
             if (tokenAtual.tipo == TipoToken.OP_BOOLEANO_NOT) {
-                // --- CASO DO NOT: ( id NOT ( ... ) ---
-                // Reconstrói a árvore para este nó específico
-                noCondicao.adicionarFilho(new NoArvore("(", linhaId));
-                noCondicao.adicionarFilho(new NoArvore(lexemaId, linhaId));
-
+                // --- CASO DO NOT: ( NOT ( ... ) ) ---
                 noCondicao.adicionarFilho(new NoArvore(tokenAtual.lexema, tokenAtual.linha)); // NOT
                 consumir(TipoToken.OP_BOOLEANO_NOT);
 
-                noCondicao.adicionarFilho(condicao()); // Recursão para a condição interna
+                // Recursão para a condição interna (que deve estar entre parênteses)
+                noCondicao.adicionarFilho(condicao());
 
-                // O loop (E | OR) pode continuar após o NOT? A gramática sugere que o NOT encerra com ')'.
-                // Mas se houver 'E' depois, a regra superior trata.
             } else {
                 // --- CASO SIMPLES: ( id > 10 ) ---
-                // Precisamos criar o nó "CondicaoSimples" manualmente aqui pois já consumimos o ID
-                NoArvore noSimples = new NoArvore("CondicaoSimples", linhaId);
-                noSimples.adicionarFilho(new NoArvore(lexemaId, linhaId)); // Adiciona o ID que já lemos
+                // Como já consumimos o '(', chamamos uma versão auxiliar ou tratamos aqui
+                // Precisamos do ID inicial
+                if (tokenAtual.tipo == TipoToken.IDENTIFICADOR) {
+                    NoArvore noSimples = new NoArvore("CondicaoSimples", tokenAtual.linha);
 
-                noSimples.adicionarFilho(new NoArvore(tokenAtual.lexema, tokenAtual.linha)); // Operador (> < =)
-                consumir(TipoToken.OP_LOGICO);
+                    noSimples.adicionarFilho(new NoArvore(tokenAtual.lexema, tokenAtual.linha)); // ID
+                    consumir(TipoToken.IDENTIFICADOR);
 
-                if (tokenAtual.tipo == TipoToken.IDENTIFICADOR || tokenAtual.tipo == TipoToken.NUMERO) {
-                    noSimples.adicionarFilho(new NoArvore(tokenAtual.lexema, tokenAtual.linha));
-                    consumir(tokenAtual.tipo);
+                    noSimples.adicionarFilho(new NoArvore(tokenAtual.lexema, tokenAtual.linha)); // OP
+                    consumir(TipoToken.OP_LOGICO);
+
+                    if (tokenAtual.tipo == TipoToken.IDENTIFICADOR || tokenAtual.tipo == TipoToken.NUMERO) {
+                        noSimples.adicionarFilho(new NoArvore(tokenAtual.lexema, tokenAtual.linha));
+                        consumir(tokenAtual.tipo);
+                    } else {
+                        throw new RuntimeException("Erro Sintático: Esperado valor após operador lógico. Linha " + tokenAtual.linha);
+                    }
+                    noCondicao.adicionarFilho(noSimples);
                 } else {
-                    throw new RuntimeException("Erro Sintático: Esperado valor após operador lógico.");
+                    throw new RuntimeException("Erro Sintático: Esperado IDENTIFICADOR ou NOT após '('. Linha " + tokenAtual.linha);
                 }
-                noCondicao.adicionarFilho(noSimples);
             }
-            consumir(TipoToken.FECHA_PARENTESES);
+
+            // Consome o parêntese de fechamento da condição atual
+            if (tokenAtual.tipo == TipoToken.FECHA_PARENTESES) {
+                noCondicao.adicionarFilho(new NoArvore(")", tokenAtual.linha));
+                consumir(TipoToken.FECHA_PARENTESES);
+            } else {
+                throw new RuntimeException("Erro Sintático: Esperado ')' final. Linha " + tokenAtual.linha);
+            }
+
         } else {
-            throw new RuntimeException("Erro Sintático: Condição deve começar com '('.");
+            throw new RuntimeException("Erro Sintático: Condição deve começar com '('. Linha " + tokenAtual.linha);
         }
 
         // Suporte a (E | OR) recursivo

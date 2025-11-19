@@ -1,0 +1,85 @@
+************Cases de Sucesso************
+1. Aritmética Básica e Tipos Objetivo: Testar declaração múltipla e precedência básica (multiplicação antes de soma).
+$
+inteiro a, b, c;
+real x, y;
+a = 10;
+b = 20;
+c = a + b * 2;
+x = 1.5;
+y = x / 2.0;
+$.
+
+2. Estrutura Condicional com NOT Objetivo: Testar a nova implementação do operador unário NOT.
+$
+inteiro status;
+status = 0;
+se (NOT (status == 1)) entao 
+    status = 1;
+$.
+
+3. Laço enquanto com RESTO Objetivo: Testar o operador RESTO (MOD) e o loop.
+$
+inteiro i, res;
+i = 1;
+enquanto (i < 10) 
+    res = i RESTO 2;
+$.
+
+4. Lógica Complexa (E / OR) Objetivo: Testar condições compostas hierárquicas.
+$
+inteiro a, b;
+a = 5;
+b = 10;
+se ((a > 0) E (b < 20)) entao 
+    a = a + 1;
+se ((a == 6) OR (b == 10)) entao
+    b = b + 1;
+$.
+
+5. Aninhamento Limite (Profundidade Permitida) Objetivo: Testar aninhamento profundo mas dentro do limite de 10 (Premissa 2).
+$
+inteiro x;
+se (x > 0) entao
+ se (x > 0) entao
+  se (x > 0) entao
+   se (x > 0) entao
+    se (x > 0) entao
+     se (x > 0) entao
+      se (x > 0) entao
+       se (x > 0) entao
+        x = 1;
+$.
+
+************Cases de Erro************
+1. Erro Léxico: Identificador muito longo Violação: Premissa 1 (Máximo 10 caracteres).
+$
+inteiro variavelGigante; 
+$.
+
+2. Erro Semântico: Variável não declarada Violação: Premissa 4a (Uso sem declaração).
+$
+inteiro a;
+a = 10;
+b = 20;
+$.
+
+3. Erro Semântico: Incompatibilidade de Tipos Violação: Premissa 4b (Atribuir Real em Inteiro).
+$
+inteiro num;
+num = 10.5;
+$.
+
+4. Erro Sintático: Profundidade Excedida Violação: Premissa 2 (Máximo 10 comandos aninhados).
+$
+inteiro x;
+se(x>0) entao se(x>0) entao se(x>0) entao se(x>0) entao se(x>0) entao
+ se(x>0) entao se(x>0) entao se(x>0) entao se(x>0) entao se(x>0) entao
+  se(x>0) entao x = 1;
+$.
+
+5. Erro Sintático: Sintaxe Inválida (Falta entao) Violação: Regra da gramática condicional.
+$
+inteiro a;
+se (a > 10) a = 0;
+$.
