@@ -1,0 +1,10 @@
+--- ERRO DE COMPILAÇÃO ---
+Erro Semântico: Variável 'b' não declarada. Linha 2
+
+--- Stack Trace ---
+java.lang.RuntimeException: Erro Semântico: Variável 'b' não declarada. Linha 2
+	at TabelaDeSimbolos.verificarDeclarada(TabelaDeSimbolos.java:30)
+	at AnalisadorSemantico.validarAtribuicao(AnalisadorSemantico.java:47)
+	at AnalisadorSemantico.analisar(AnalisadorSemantico.java:20)
+	at AnalisadorSemantico.analisar(AnalisadorSemantico.java:31)
+	at Main.main(Main.java:56)

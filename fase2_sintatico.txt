@@ -1,0 +1,15 @@
+--- Fase 2: Análise Sintática (Arvore) ---
+└── Programa (L0)
+    ├── $ (L1)
+    ├── DeclaracaoTipo (L1)
+    │   ├── inteiro (L1)
+    │   ├── a (L1)
+    │   └── ; (L1)
+    ├── Atribuicao (L2)
+    │   ├── b (L2)
+    │   ├── = (L2)
+    │   └── Expressao (L2)
+    │       └── 10 (L2)
+    └── $. (L3)
+Análise sintática concluída com sucesso!
+-------------------------------------------------
