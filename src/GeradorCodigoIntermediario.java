@@ -180,10 +180,12 @@ public class GeradorCodigoIntermediario {
 
     private String traduzirOperadorLogico(String op) {
         switch (op) {
-            case ">": return "CMPGT"; 
-            case "<": return "CMPLT"; 
-            case "==": return "CMPEQ"; 
-            // TODO: Adicionar <=, >=, !=
+            case ">":  return "CMPGT"; // Greater Than
+            case "<":  return "CMPLT"; // Less Than
+            case "==": return "CMPEQ"; // Equal
+            case ">=": return "CMPGE"; // Greater Equal (Estendido)
+            case "<=": return "CMPLE"; // Less Equal (Estendido)
+            case "!=": return "CMPNE"; // Not Equal (Estendido)
             default:
                 throw new RuntimeException("Operador lógico não suportado: " + op);
         }

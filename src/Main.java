@@ -1,18 +1,13 @@
 import java.io.FileWriter; 
 import java.io.IOException; 
 import java.io.PrintWriter; 
-import java.io.StringWriter; 
+import java.io.StringWriter;
+import java.nio.file.*;
 
 public class Main {
-    public static void main(String[] args) {
-        
-        //String codigo = "$ inteiro a, b; \n"
-        //              + "se (a > 10 entao b = b+1; \n"
-        //              + " $." ;
-        
-        String codigo = "$ inteiro a; \n"
-                       + "b = 10; \n"
-                       + " $." ;
+    public static void main(String[] args) throws IOException {
+
+        String codigo = Files.readString(Path.of("código.txt"));
 
         try {
             // --- Fase 1: Análise Léxica ---

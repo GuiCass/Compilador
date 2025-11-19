@@ -1,10 +1,9 @@
 --- ERRO DE COMPILAÇÃO ---
-Erro Semântico: Variável 'b' não declarada. Linha 2
+Erro Sintático: Esperado PONTO_E_VIRGULA mas encontrado IDENTIFICADOR na linha 3
 
 --- Stack Trace ---
-java.lang.RuntimeException: Erro Semântico: Variável 'b' não declarada. Linha 2
-	at TabelaDeSimbolos.verificarDeclarada(TabelaDeSimbolos.java:30)
-	at AnalisadorSemantico.validarAtribuicao(AnalisadorSemantico.java:47)
-	at AnalisadorSemantico.analisar(AnalisadorSemantico.java:20)
-	at AnalisadorSemantico.analisar(AnalisadorSemantico.java:31)
-	at Main.main(Main.java:56)
+java.lang.RuntimeException: Erro Sintático: Esperado PONTO_E_VIRGULA mas encontrado IDENTIFICADOR na linha 3
+	at AnalisadorSintatico.consumir(AnalisadorSintatico.java:24)
+	at AnalisadorSintatico.declaracaoTipo(AnalisadorSintatico.java:81)
+	at AnalisadorSintatico.programa(AnalisadorSintatico.java:40)
+	at Main.main(Main.java:34)

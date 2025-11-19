@@ -78,22 +78,35 @@ public class AnalisadorLexico {
                 posicaoAtual++;
                 return new Token(TipoToken.OP_SOMA, "+", linhaAtual);
             case '>':
-                // Adicionar lógica para >= se necessário
                 posicaoAtual++;
+                if (posicaoAtual < codigoFonte.length() && codigoFonte.charAt(posicaoAtual) == '=') {
+                    posicaoAtual++;
+                    return new Token(TipoToken.OP_LOGICO, ">=", linhaAtual);
+                }
                 return new Token(TipoToken.OP_LOGICO, ">", linhaAtual);
-            // ... outros símbolos simples como +, *, /, (, )
+            case '<':
+                posicaoAtual++;
+                if (posicaoAtual < codigoFonte.length() && codigoFonte.charAt(posicaoAtual) == '=') {
+                    posicaoAtual++;
+                    return new Token(TipoToken.OP_LOGICO, "<=", linhaAtual);
+                }
+                return new Token(TipoToken.OP_LOGICO, "<", linhaAtual);
             case '=':
                 posicaoAtual++;
-                // Checa por '=='
                 if (posicaoAtual < codigoFonte.length() && codigoFonte.charAt(posicaoAtual) == '=') {
                     posicaoAtual++;
                     return new Token(TipoToken.OP_LOGICO, "==", linhaAtual);
                 }
                 return new Token(TipoToken.OP_ATRIBUICAO, "=", linhaAtual);
-            // ... outros operadores compostos como <=, >=, !=
+            case '!':
+                posicaoAtual++;
+                if (posicaoAtual < codigoFonte.length() && codigoFonte.charAt(posicaoAtual) == '=') {
+                    posicaoAtual++;
+                    return new Token(TipoToken.OP_LOGICO, "!=", linhaAtual);
+                }
+                // Se encontrou apenas '!', lança erro (pois não existe operador '!' sozinho na MLP)
+                throw new RuntimeException("Erro Léxico: Caractere inesperado '!' na linha " + linhaAtual);
         }
-        
-        // Se chegou aqui, é um caractere inválido
         throw new RuntimeException("Erro Léxico: Caractere inesperado '" + atual + "' na linha " + linhaAtual);
     }
     

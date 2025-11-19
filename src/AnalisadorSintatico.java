@@ -87,6 +87,8 @@ public class AnalisadorSintatico {
     private NoArvore comando() {
         if (tokenAtual.tipo == TipoToken.SE) {
             return condicional();
+        } else if (tokenAtual.tipo == TipoToken.ENQUANTO) { // ADICIONAR ESTE BLOCO
+            return iterativo();
         } else if (tokenAtual.tipo == TipoToken.IDENTIFICADOR) {
             return atribuicao();
         }
@@ -142,7 +144,7 @@ public class AnalisadorSintatico {
         }
         
         noCondicional.adicionarFilho(new NoArvore(tokenAtual.lexema, tokenAtual.linha)); // ;
-        consumir(TipoToken.PONTO_E_VIRGULA);
+        //consumir(TipoToken.PONTO_E_VIRGULA);
         
         return noCondicional;
     }
@@ -173,8 +175,20 @@ public class AnalisadorSintatico {
         
         return noCondicao;
     }
-    
-    private void iterativo(){
-        //...
+
+    private NoArvore iterativo() {
+        NoArvore noIterativo = new NoArvore("Iterativo", tokenAtual.linha);
+
+        noIterativo.adicionarFilho(new NoArvore(tokenAtual.lexema, tokenAtual.linha)); // enquanto
+        consumir(TipoToken.ENQUANTO);
+
+        noIterativo.adicionarFilho(condicao()); // reaproveita a lógica de condição
+
+        noIterativo.adicionarFilho(comando()); // processa o comando interno
+
+        // Nota: Assim como no 'condicional', não exigimos um ';' extra aqui
+        // pois o comando interno (ex: atribuição) já consome o seu próprio ';'.
+
+        return noIterativo;
     }
 }
