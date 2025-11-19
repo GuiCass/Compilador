@@ -190,15 +190,57 @@ public class AnalisadorSintatico {
     private NoArvore condicao() {
         NoArvore noCondicao = new NoArvore("Condicao", tokenAtual.linha);
 
-        // Processa a primeira condição simples: ( id op id )
-        noCondicao.adicionarFilho(condicaoSimples());
+        // Verifica lookahead para decidir entre CondicaoSimples ou NOT
+        // Ambos começam com '(' seguido de IDENTIFICADOR
+        if (tokenAtual.tipo == TipoToken.ABRE_PARENTESES) {
+            // Precisamos "espiar" a estrutura sem consumir agora, ou iniciar o consumo
+            // Como seu parser é preditivo simples, vamos iniciar e decidir no caminho:
 
-        // Verifica se há conectivos lógicos E / OR
+            consumir(TipoToken.ABRE_PARENTESES);
+            String lexemaId = tokenAtual.lexema;
+            int linhaId = tokenAtual.linha;
+            consumir(TipoToken.IDENTIFICADOR); // Consome o ID inicial
+
+            if (tokenAtual.tipo == TipoToken.OP_BOOLEANO_NOT) {
+                // --- CASO DO NOT: ( id NOT ( ... ) ---
+                // Reconstrói a árvore para este nó específico
+                noCondicao.adicionarFilho(new NoArvore("(", linhaId));
+                noCondicao.adicionarFilho(new NoArvore(lexemaId, linhaId));
+
+                noCondicao.adicionarFilho(new NoArvore(tokenAtual.lexema, tokenAtual.linha)); // NOT
+                consumir(TipoToken.OP_BOOLEANO_NOT);
+
+                noCondicao.adicionarFilho(condicao()); // Recursão para a condição interna
+
+                // O loop (E | OR) pode continuar após o NOT? A gramática sugere que o NOT encerra com ')'.
+                // Mas se houver 'E' depois, a regra superior trata.
+            } else {
+                // --- CASO SIMPLES: ( id > 10 ) ---
+                // Precisamos criar o nó "CondicaoSimples" manualmente aqui pois já consumimos o ID
+                NoArvore noSimples = new NoArvore("CondicaoSimples", linhaId);
+                noSimples.adicionarFilho(new NoArvore(lexemaId, linhaId)); // Adiciona o ID que já lemos
+
+                noSimples.adicionarFilho(new NoArvore(tokenAtual.lexema, tokenAtual.linha)); // Operador (> < =)
+                consumir(TipoToken.OP_LOGICO);
+
+                if (tokenAtual.tipo == TipoToken.IDENTIFICADOR || tokenAtual.tipo == TipoToken.NUMERO) {
+                    noSimples.adicionarFilho(new NoArvore(tokenAtual.lexema, tokenAtual.linha));
+                    consumir(tokenAtual.tipo);
+                } else {
+                    throw new RuntimeException("Erro Sintático: Esperado valor após operador lógico.");
+                }
+                noCondicao.adicionarFilho(noSimples);
+            }
+            consumir(TipoToken.FECHA_PARENTESES);
+        } else {
+            throw new RuntimeException("Erro Sintático: Condição deve começar com '('.");
+        }
+
+        // Suporte a (E | OR) recursivo
         while (tokenAtual.tipo == TipoToken.OP_BOOLEANO_E || tokenAtual.tipo == TipoToken.OP_BOOLEANO_OR) {
-            noCondicao.adicionarFilho(new NoArvore(tokenAtual.lexema, tokenAtual.linha)); // E / OR
+            noCondicao.adicionarFilho(new NoArvore(tokenAtual.lexema, tokenAtual.linha));
             consumir(tokenAtual.tipo);
-
-            noCondicao.adicionarFilho(condicaoSimples());
+            noCondicao.adicionarFilho(condicao());
         }
 
         return noCondicao;

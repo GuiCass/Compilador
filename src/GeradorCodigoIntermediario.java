@@ -57,6 +57,9 @@ public class GeradorCodigoIntermediario {
         }
 
         switch (no.valor) {
+            case "Iterativo":
+                gerarIterativo(no);
+                break;
             case "Atribuicao":
                 gerarAtribuicao(no);
                 break;
@@ -156,6 +159,44 @@ public class GeradorCodigoIntermediario {
             }
         }
         return regAtual; // O resultado final permanece no primeiro registrador
+    }
+
+    private void gerarIterativo(NoArvore noIterativo) {
+        resetContadorRegistrador();
+
+        String labelInicio = alocarLabel();
+        String labelFim = alocarLabel();
+
+        // Estrutura AST: [enquanto, Condicao, Comando]
+        NoArvore noCondicao = noIterativo.filhos.get(1);
+        NoArvore noComando = noIterativo.filhos.get(2);
+
+        // 1. Label de início (para voltar e repetir o loop)
+        emitir("LABEL " + labelInicio);
+
+        // 2. Avaliação da condição
+        // (Reutiliza lógica similar ao condicional, simplificado aqui para condição simples)
+        NoArvore termo1 = noCondicao.filhos.get(0).filhos.get(0); // Dentro de CondicaoSimples
+        NoArvore op = noCondicao.filhos.get(0).filhos.get(1);
+        NoArvore termo2 = noCondicao.filhos.get(0).filhos.get(2);
+
+        String reg1 = carregarTermo(termo1);
+        String reg2 = carregarTermo(termo2);
+        String opMnem = traduzirOperadorLogico(op.valor);
+
+        emitir(opMnem + " " + reg1 + ", " + reg2);
+
+        // 3. Se FALSO, pula para fora
+        emitir("JMPFALSE " + reg1 + ", " + labelFim);
+
+        // 4. Corpo do loop
+        gerar(noComando);
+
+        // 5. Salto incondicional para o início
+        emitir("JMP " + labelInicio);
+
+        // 6. Label de fim
+        emitir("LABEL " + labelFim);
     }
 
     /**
