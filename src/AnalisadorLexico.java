@@ -16,7 +16,10 @@ public class AnalisadorLexico {
         palavrasReservadas.put("entao", TipoToken.ENTAO);
         palavrasReservadas.put("senao", TipoToken.SENAO);
         palavrasReservadas.put("enquanto", TipoToken.ENQUANTO);
-        // ... outras palavras reservadas como 'RESTO'
+        palavrasReservadas.put("E", TipoToken.OP_BOOLEANO_E);   // Crie este TipoToken
+        palavrasReservadas.put("OR", TipoToken.OP_BOOLEANO_OR); // Crie este TipoToken
+        palavrasReservadas.put("NOT", TipoToken.OP_BOOLEANO_NOT);// Crie este TipoToken
+        palavrasReservadas.put("RESTO", TipoToken.OP_RESTO);
     }
 
     public AnalisadorLexico(String codigoFonte) {
@@ -106,6 +109,12 @@ public class AnalisadorLexico {
                 }
                 // Se encontrou apenas '!', lança erro (pois não existe operador '!' sozinho na MLP)
                 throw new RuntimeException("Erro Léxico: Caractere inesperado '!' na linha " + linhaAtual);
+            case '*':
+                posicaoAtual++;
+                return new Token(TipoToken.OP_MULT, "*", linhaAtual);
+            case '/':
+                posicaoAtual++;
+                return new Token(TipoToken.OP_DIV, "/", linhaAtual);
         }
         throw new RuntimeException("Erro Léxico: Caractere inesperado '" + atual + "' na linha " + linhaAtual);
     }

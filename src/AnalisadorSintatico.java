@@ -29,23 +29,24 @@ public class AnalisadorSintatico {
 
     // Método inicial, baseado na regra: inicio = '$' tipo* comando* '$.'
     public NoArvore programa() {
-        // Todos os "new NoArvore(valor)" foram atualizados para "new NoArvore(valor, linha)"
-        NoArvore noPrograma = new NoArvore("Programa", 0); 
+        NoArvore noPrograma = new NoArvore("Programa", 0);
         noPrograma.adicionarFilho(new NoArvore(tokenAtual.lexema, tokenAtual.linha));
         consumir(TipoToken.INICIO_PROGRAMA);
 
         while (tokenAtual.tipo == TipoToken.TIPO_INTEIRO ||
-               tokenAtual.tipo == TipoToken.TIPO_REAL ||
-               tokenAtual.tipo == TipoToken.TIPO_CARACTER) {
+                tokenAtual.tipo == TipoToken.TIPO_REAL ||
+                tokenAtual.tipo == TipoToken.TIPO_CARACTER) {
             noPrograma.adicionarFilho(declaracaoTipo());
         }
+
         while (tokenAtual.tipo != TipoToken.FIM_PROGRAMA && tokenAtual.tipo != TipoToken.EOF) {
-            noPrograma.adicionarFilho(comando());
+            // CORREÇÃO: Passando 0 como profundidade inicial
+            noPrograma.adicionarFilho(comando(0));
         }
-        
+
         noPrograma.adicionarFilho(new NoArvore(tokenAtual.lexema, tokenAtual.linha));
         consumir(TipoToken.FIM_PROGRAMA);
-        
+
         System.out.println("Análise sintática concluída com sucesso!");
         return noPrograma;
     }
@@ -84,13 +85,18 @@ public class AnalisadorSintatico {
     }
 
     // regra: comando = condicional | iterativo | atribuição | ε
-    private NoArvore comando() {
+    private NoArvore comando(int profundidade) {
+        // Validação da Premissa 2: Profundidade máxima de 10
+        if (profundidade > 10) {
+            throw new RuntimeException("Erro Sintático: Profundidade máxima de 10 comandos excedida na linha " + tokenAtual.linha);
+        }
+
         if (tokenAtual.tipo == TipoToken.SE) {
-            return condicional();
-        } else if (tokenAtual.tipo == TipoToken.ENQUANTO) { // ADICIONAR ESTE BLOCO
-            return iterativo();
+            return condicional(profundidade); // Repassa a profundidade atual
+        } else if (tokenAtual.tipo == TipoToken.ENQUANTO) {
+            return iterativo(profundidade);   // Repassa a profundidade atual
         } else if (tokenAtual.tipo == TipoToken.IDENTIFICADOR) {
-            return atribuicao();
+            return atribuicao(); // Atribuição não aumenta profundidade, é folha
         }
         return new NoArvore("ComandoVazio(ε)", tokenAtual.linha);
     }
@@ -123,29 +129,30 @@ public class AnalisadorSintatico {
         consumir(tokenAtual.tipo);
         return noExpressao;
     }
-    
-    private NoArvore condicional() {
+
+    private NoArvore condicional(int profundidade) {
         NoArvore noCondicional = new NoArvore("Condicional", tokenAtual.linha);
-        
+
         noCondicional.adicionarFilho(new NoArvore(tokenAtual.lexema, tokenAtual.linha)); // se
         consumir(TipoToken.SE);
-        
+
         noCondicional.adicionarFilho(condicao());
-        
+
         noCondicional.adicionarFilho(new NoArvore(tokenAtual.lexema, tokenAtual.linha)); // entao
         consumir(TipoToken.ENTAO);
-        
-        noCondicional.adicionarFilho(comando());
-        
+
+        // CORREÇÃO: Incrementa profundidade para o comando interno
+        noCondicional.adicionarFilho(comando(profundidade + 1));
+
         if (tokenAtual.tipo == TipoToken.SENAO) {
             noCondicional.adicionarFilho(new NoArvore(tokenAtual.lexema, tokenAtual.linha)); // senao
             consumir(TipoToken.SENAO);
-            noCondicional.adicionarFilho(comando());
+            // CORREÇÃO: Incrementa profundidade para o comando do senão
+            noCondicional.adicionarFilho(comando(profundidade + 1));
         }
-        
-        noCondicional.adicionarFilho(new NoArvore(tokenAtual.lexema, tokenAtual.linha)); // ;
-        //consumir(TipoToken.PONTO_E_VIRGULA);
-        
+
+        // Lembrar: removemos o ponto-e-vírgula aqui no passo anterior
+
         return noCondicional;
     }
     
@@ -176,18 +183,16 @@ public class AnalisadorSintatico {
         return noCondicao;
     }
 
-    private NoArvore iterativo() {
+    private NoArvore iterativo(int profundidade) {
         NoArvore noIterativo = new NoArvore("Iterativo", tokenAtual.linha);
 
         noIterativo.adicionarFilho(new NoArvore(tokenAtual.lexema, tokenAtual.linha)); // enquanto
         consumir(TipoToken.ENQUANTO);
 
-        noIterativo.adicionarFilho(condicao()); // reaproveita a lógica de condição
+        noIterativo.adicionarFilho(condicao());
 
-        noIterativo.adicionarFilho(comando()); // processa o comando interno
-
-        // Nota: Assim como no 'condicional', não exigimos um ';' extra aqui
-        // pois o comando interno (ex: atribuição) já consome o seu próprio ';'.
+        // CORREÇÃO: Incrementa profundidade para o corpo do loop
+        noIterativo.adicionarFilho(comando(profundidade + 1));
 
         return noIterativo;
     }
