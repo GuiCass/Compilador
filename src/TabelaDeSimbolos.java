@@ -1,9 +1,13 @@
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Estrutura de dados que armazena informações sobre os identificadores (variáveis) declarados.
+ * Fundamental para a análise semântica.
+ */
 public class TabelaDeSimbolos {
 
-    // Usamos um HashMap para armazenar a variável (nome) e seu tipo (string)
+    // Armazena par (Nome da Variável, Tipo da Variável)
     private Map<String, String> simbolos;
 
     public TabelaDeSimbolos() {
@@ -11,8 +15,7 @@ public class TabelaDeSimbolos {
     }
 
     /**
-     * Declara uma nova variável na tabela.
-     * Dispara um erro semântico se a variável já foi declarada. [cite: 58]
+     * Registra uma nova variável. Lança erro se duplicada.
      */
     public void declarar(String nome, String tipo, int linha) {
         if (simbolos.containsKey(nome)) {
@@ -22,8 +25,7 @@ public class TabelaDeSimbolos {
     }
 
     /**
-     * Verifica se uma variável foi declarada e retorna seu tipo.
-     * Dispara um erro semântico se não foi declarada. 
+     * Verifica existência e retorna o tipo. Lança erro se não encontrada.
      */
     public String verificarDeclarada(String nome, int linha) {
         if (!simbolos.containsKey(nome)) {
@@ -31,10 +33,7 @@ public class TabelaDeSimbolos {
         }
         return simbolos.get(nome);
     }
-    
-    /**
-     * Retorna o conteúdo da tabela para impressão.
-     */
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();

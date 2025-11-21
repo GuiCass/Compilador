@@ -7,4 +7,4 @@ java.lang.RuntimeException: Erro Sintático: Esperado ENTAO mas encontrado IDENT
 	at AnalisadorSintatico.condicional(AnalisadorSintatico.java:172)
 	at AnalisadorSintatico.comando(AnalisadorSintatico.java:95)
 	at AnalisadorSintatico.programa(AnalisadorSintatico.java:44)
-	at Main.main(Main.java:34)
+	at Main.main(Main.java:55)

@@ -1,3 +1,9 @@
+/**
+ * Responsável pela validação de regras de contexto que a gramática não captura.
+ * Principais verificações:
+ * 1. Uso de variáveis não declaradas.
+ * 2. Incompatibilidade de tipos (ex: atribuir float a int).
+ */
 public class AnalisadorSemantico {
 
     private TabelaDeSimbolos tabela;
@@ -7,47 +13,42 @@ public class AnalisadorSemantico {
     }
 
     /**
-     * Método principal que inicia a varredura da Árvore Sintática.
+     * Percorre a árvore sintática recursivamente verificando regras em nós específicos.
      */
     public void analisar(NoArvore no) {
         if (no == null) {
             return;
         }
 
-        // Usamos o 'valor' do nó para decidir qual regra semântica aplicar
         switch (no.valor) {
             case "Atribuicao":
                 validarAtribuicao(no);
                 break;
-            case "CondicaoSimples": // CORREÇÃO: Valida apenas a folha da condição (a comparação)
+            case "CondicaoSimples":
                 validarCondicaoSimples(no);
                 break;
-            // Casos como "Condicao", "NOT", "E" apenas propagam a análise para os filhos
         }
 
-        // Continua a varredura recursivamente para os filhos
         for (NoArvore filho : no.filhos) {
             analisar(filho);
         }
     }
 
     /**
-     * Valida um nó de Atribuição (id = expr)
+     * Valida atribuição: Variável alvo deve existir e ter tipo compatível com a expressão.
      */
     private void validarAtribuicao(NoArvore noAtribuicao) {
-        // O primeiro filho é o ID (ex: "b")
         NoArvore noVar = noAtribuicao.filhos.get(0);
         String varNome = noVar.valor;
         int linha = noVar.linha;
 
-        // Regra A: Verifica se 'b' foi declarado
+        // Verifica se a variável foi declarada
         String tipoVar = tabela.verificarDeclarada(varNome, linha);
 
-        // O terceiro filho (índice 2) é a primeira 'Expressao'
-        // Vamos checar o tipo de toda a expressão da direita
+        // Determina o tipo resultante da expressão à direita
         String tipoExpr = determinarTipoExpressao(noAtribuicao, 2);
 
-        // Regra B: Verifica compatibilidade
+        // Verifica compatibilidade estrita de tipos
         if (!tipoVar.equals(tipoExpr)) {
             throw new RuntimeException("Erro Semântico: Tipos incompatíveis na atribuição. " +
                     "Variável '" + varNome + "' (" + tipoVar + ") " +
@@ -56,18 +57,15 @@ public class AnalisadorSemantico {
     }
 
     /**
-     * Valida um nó de Condição Simples: [ID, OP, ID/NUM]
-     * CORREÇÃO: Adaptado para os índices da nova estrutura gerada pelo Sintático
+     * Valida condições: Os termos comparados devem ser do mesmo tipo.
      */
     private void validarCondicaoSimples(NoArvore noCondicaoSimples) {
-        // Estrutura: Filho 0=ID, Filho 1=OP, Filho 2=ID/NUM
         NoArvore noTermo1 = noCondicaoSimples.filhos.get(0);
         NoArvore noTermo2 = noCondicaoSimples.filhos.get(2);
 
         String tipoTermo1 = determinarTipoTermo(noTermo1);
         String tipoTermo2 = determinarTipoTermo(noTermo2);
 
-        // Regra C: Verifica compatibilidade (ex: inteiro > inteiro)
         if (!tipoTermo1.equals(tipoTermo2)) {
             throw new RuntimeException("Erro Semântico: Tipos incompatíveis na condição. " +
                     "Comparando (" + tipoTermo1 + ") com (" + tipoTermo2 + "). " +
@@ -76,19 +74,17 @@ public class AnalisadorSemantico {
     }
 
     /**
-     * Determina o tipo de uma expressão complexa (ex: b + 1 + c)
+     * Calcula o tipo resultante de uma expressão aritmética composta.
      */
     private String determinarTipoExpressao(NoArvore noPai, int indiceInicio) {
-        // Pega o tipo do primeiro termo
         NoArvore primeiroTermo = noPai.filhos.get(indiceInicio);
         String tipoResultante = determinarTipoTermo(primeiroTermo.filhos.get(0));
 
-        // Itera sobre os pares (operador, termo) restantes
+        // Verifica cada termo subsequente na expressão
         for (int i = indiceInicio + 2; i < noPai.filhos.size(); i += 2) {
             NoArvore proximoTermo = noPai.filhos.get(i);
             String tipoProximo = determinarTipoTermo(proximoTermo.filhos.get(0));
 
-            // Regra C: Verifica se os tipos na operação são compatíveis
             if (!tipoResultante.equals(tipoProximo)) {
                 throw new RuntimeException("Erro Semântico: Tipos incompatíveis na expressão. " +
                         "Operação entre (" + tipoResultante + ") e (" + tipoProximo + "). " +
@@ -99,13 +95,13 @@ public class AnalisadorSemantico {
     }
 
     /**
-     * Determina o tipo de um único termo.
+     * Retorna o tipo de um termo simples (variável ou literal numérico).
      */
     private String determinarTipoTermo(NoArvore noTermo) {
         String valor = noTermo.valor;
         int linha = noTermo.linha;
 
-        // Se for número (começa com dígito)
+        // Identifica literais
         if (Character.isDigit(valor.charAt(0))) {
             if (valor.contains(".")) {
                 return "real";
@@ -113,7 +109,7 @@ public class AnalisadorSemantico {
             return "inteiro";
         }
 
-        // Se não for número, deve ser um ID.
+        // Busca o tipo da variável na tabela
         return tabela.verificarDeclarada(valor, linha);
     }
 }
